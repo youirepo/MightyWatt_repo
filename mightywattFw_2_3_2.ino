@@ -117,7 +117,7 @@ const byte MODE_CP = 2;
 const byte MODE_CR = 3;*/
 enum opn_mode_t {MODE_CC, MODE_CV, MODE_CP, MODE_CR};
 //  current mode
-byte mode = MODE_CC;
+opn_mode_t mode = MODE_CC;
 // </Operating Mode>
 
 // <Computed Values>
