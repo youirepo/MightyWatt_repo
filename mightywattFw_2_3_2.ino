@@ -111,13 +111,12 @@ byte loadStatus = READY;
 // </Status>
 
 // <Operating Mode>
-/*const byte MODE_CC = 0;
+const byte MODE_CC = 0;
 const byte MODE_CV = 1;
 const byte MODE_CP = 2;
-const byte MODE_CR = 3;*/
-enum opn_mode_t {MODE_CC, MODE_CV, MODE_CP, MODE_CR};
+const byte MODE_CR = 3;
 //  current mode
-opn_mode_t mode = MODE_CC;
+byte mode = MODE_CC;
 // </Operating Mode>
 
 // <Computed Values>
