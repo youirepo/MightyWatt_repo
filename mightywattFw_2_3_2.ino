@@ -616,9 +616,9 @@ void sendMessage(byte command) // procedure called when there is a send (read fr
       break;
     }
   default:
-    {
-      serialData[0] = current >> 8;
-      serialData[1] = current & 0xFF;
+    {   // Measurement report of MW; first byte of both current and voltage are the MSB's and so need to be multiplied by 2^8 and the total is calculated by adding it with the LSB
+      serialData[0] = current >> 8;   // If this is MSB and the below byte is LSB then shouldn't this be left shifted to be multiplied by 2^8?
+      serialData[1] = current & 0xFF; // Is there really any point in this AND operation?
       serialData[2] = voltage >> 8;
       serialData[3] = voltage & 0xFF;
       serialData[4] = temperature;
