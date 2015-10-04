@@ -625,7 +625,7 @@ void sendMessage(byte command) // procedure called when there is a send (read fr
       serialData[5] = remoteStatus;
       serialData[6] = loadStatus;
       Serial.write(serialData, 7);
-      printJSON(serialData);    
+      printJSON();    
       loadStatus = READY;
       break;
     }
@@ -691,19 +691,13 @@ unsigned int readADC12bit(int channel) // oversamples ADC to 12 bit (AVR) or ave
   #endif
 }
 
-void printJSON(byte serialData[]){
-  /* Concatenate the MSB and LSB and store in unsigned integer */
-  uint16_t curr = (serialData[0] << 8) | serialData[1]; 
-  uint16_t volt = (serialData[2] << 8) | serialData[3]; 
-  
-  uint16_t temp = (uint16_t)serialData[4];  // Cast to unsigned integer
-  
+void printJSON(){
   /* Print in JSON format */
   Serial.print("{\"current\": ");
-  Serial.print(curr, DEC);
+  Serial.print(current, DEC);
   Serial.print(", \"voltage\": ");
-  Serial.print(volt, DEC);
+  Serial.print(voltage, DEC);
   Serial.print(", \"temperature\": ");
-  Serial.print(temp, DEC);
+  Serial.print(temperature, DEC);
   Serial.println("}");
 }
