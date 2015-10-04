@@ -616,15 +616,16 @@ void sendMessage(byte command) // procedure called when there is a send (read fr
       break;
     }
   default:
-    {   // Measurement report of MW; first byte of both current and voltage are the MSB's and so need to be multiplied by 2^8 and the total is calculated by adding it with the LSB
-      serialData[0] = current >> 8;   // If this is MSB and the below byte is LSB then shouldn't this be left shifted to be multiplied by 2^8?
-      serialData[1] = current & 0xFF; // Is there really any point in this AND operation?
+    {   
+      serialData[0] = current >> 8;  
+      serialData[1] = current & 0xFF; 
       serialData[2] = voltage >> 8;
       serialData[3] = voltage & 0xFF;
       serialData[4] = temperature;
       serialData[5] = remoteStatus;
       serialData[6] = loadStatus;
       Serial.write(serialData, 7);
+      printJSON(serialData);    
       loadStatus = READY;
       break;
     }
@@ -688,4 +689,21 @@ unsigned int readADC12bit(int channel) // oversamples ADC to 12 bit (AVR) or ave
   #ifdef ARM
     return (analogResult >> 4);
   #endif
+}
+
+void printJSON(byte serialData[]){
+  /* Concatenate the MSB and LSB and store in unsigned integer */
+  uint16_t curr = (serialData[0] << 8) | serialData[1]; 
+  uint16_t volt = (serialData[2] << 8) | serialData[3]; 
+  
+  uint16_t temp = (uint16_t)serialData[4];  // Cast to unsigned integer
+  
+  /* Print in JSON format */
+  Serial.print("{\"current\": ");
+  Serial.print(curr, DEC);
+  Serial.print(", \"voltage\": ");
+  Serial.print(volt, DEC);
+  Serial.print(", \"temperature\": ");
+  Serial.print(temp, DEC);
+  Serial.println("}");
 }
