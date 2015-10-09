@@ -701,3 +701,18 @@ void printJSON(){
   Serial.print(temperature, DEC);
   Serial.println("}");
 }
+
+void readSerialCmd(){
+  String cmd = Serial.readString();
+  
+  // Check for send commands 
+  if(cmd  == String("IDN")){
+    sendMessage(IDN);
+  }else if(cmd == String("QDC")){
+    sendMessage(QDC);
+  }else if(cmd == String("MR")){
+    sendMessage(0);
+  }else{
+    Serial.println("Invalid command");
+  }
+}
