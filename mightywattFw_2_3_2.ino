@@ -1,11 +1,10 @@
-// IMPORTANT!
+ // IMPORTANT!
 // UNCOMMENT THE LINE THAT BELONGS TO YOUR ARDUINO VERSION, COMMENT THE OTHER LINE
 //#define ARM // Arduino Due and similar ATSAM (32bit) based boards via Programming port (USB)
 #define AVR // Arduino Uno and similar AVR (8bit) based boards
 
 // WARNING!
 // TO MAKE THE MIGHTYWATT WORKING ON ARDUINO DUE, YOU MUST HAVE THE JUMPER ON DUE SET FOR EXTERNAL ANALOG REFERENCE
-
 #include <Wire.h>
 #ifdef AVR
   #define I2C Wire
@@ -21,6 +20,7 @@
 #define DVM_INPUT_RESISTANCE 330000 // differential input resistance
 // AD5691 DAC
 // </Device Information>
+#define BUFF_MAX 128
 
 // <Pins>
 const int REMOTE_PIN = 2;
@@ -53,6 +53,7 @@ const unsigned int SERIAL_TIMEOUT = 10000; // approx. 40 milliseconds for receiv
 // commands
 const byte QDC = 30; // query device capabilities
 const byte IDN = 31; // identification request
+const byte MR = 0;   // Measurement report
 // set values
 unsigned int setCurrent = 0;
 unsigned int setVoltage = 0;
@@ -149,6 +150,7 @@ void setup()
 
 void loop()
 {
+
   // <Watchdog>
   watchdogCounter++;
   if ((watchdogCounter > WATCHDOG_TIMEOUT) && (isWatchdogEnabled == 1))
@@ -166,6 +168,8 @@ void loop()
   getValues();
   controlLoop();
   serialMonitor();
+  //readSerialCmd();
+
 }
 
 void enableWatchdog()
@@ -248,27 +252,63 @@ void serialMonitor()
 {
   if (Serial.available() > 0)  
   {
- //   enableWatchdog();
+    //enableWatchdog();
     unsigned int timeOut = 0;
-    commandByte = Serial.read();
-    for (byte i = 0; i < ((commandByte & 0b01100000) >> 5); i++)
-    {
-      while(Serial.available() == 0) 
-      {
-        delayMicroseconds(4);
-        timeOut++; // watchdog counter
-        if (timeOut > SERIAL_TIMEOUT)
-        {
-          break;
-        }
-      } // waits for data
-      if (timeOut > SERIAL_TIMEOUT)
-      {
-        break;
-      }
-      serialData[i] = Serial.read(); // assigns data
-    }  
+    char cmd[BUFF_MAX]; // char array to store command
+    unsigned int val; // Value in mA, mV, mW, or mOhm
 
+//    commandByte = Serial.read();
+//    for (byte i = 0; i < ((commandByte & 0b01100000) >> 5); i++)
+//    {
+//      while(Serial.available() == 0) 
+//      {
+//        delayMicroseconds(4);
+//        timeOut++; // watchdog counter
+//        if (timeOut > SERIAL_TIMEOUT)
+//        {
+//          break;
+//        }
+//      } // waits for data
+//      if (timeOut > SERIAL_TIMEOUT)
+//      {
+//        break;
+//      }
+//      serialData[i] = Serial.read(); // assigns data
+//    }  
+    int end = Serial.readBytesUntil('\n',cmd,BUFF_MAX);
+    cmd[end] = '\0';    //Null terminate the string
+
+    #define stricmp strcasecmp
+    
+    
+    if(cmd[1] == '='){    // Check if set command
+      // Do set commands
+      sscanf(cmd, "%[^= ] = %d",cmd,&val);    // Parse the string
+      if(!stricmp(cmd,"I")){          
+        serialData[0] = val >> 8;             // Convert the input value to two bytes 
+        serialData[1] = val & 0xFF;
+        commandByte = 0b11000000;             // Set the commandByte to pass on to the appropriate functions
+      }else if(!stricmp(cmd,"V")){
+        serialData[0] = val >> 8;
+        serialData[1] = val & 0xFF;
+        commandByte = 0b11000001;
+      }else if(!stricmp(cmd,"P")){
+        // convert to three bytes
+        commandByte = 0b11100010;
+      }else if(!stricmp(cmd,"R")){
+        // convert to three bytes
+        commandByte = 0b11100011;
+      }
+    }else if(!stricmp(cmd,"QDC")){        // Check if send command
+      commandByte = 0b00011110;
+    }else if(!stricmp(cmd,"IDN")){
+      commandByte = 0b00011111;
+    }else if(!stricmp(cmd,"MR")){
+      commandByte = 0b00000000;
+    }else{
+      Serial.println("Invalid command");
+    }
+    
     Serial.flush();
 
     if (timeOut <= SERIAL_TIMEOUT)
@@ -277,7 +317,7 @@ void serialMonitor()
       {        
         // set command (write to Arduino)
         setLoad(commandByte & 0b00011111);
-        sendMessage(0);
+        //sendMessage(0);
       }
       else
       {
@@ -530,7 +570,7 @@ void setLoad(byte id) // procedure called when there is a set (write to Arduino)
   {
   case MODE_CC:
     {
-      //setMode(MODE_CC);
+      setMode(MODE_CC);
       unsigned int b0 = serialData[0];
       unsigned int b1 = serialData[1];
       setI((b0 << 8) | b1);
@@ -538,7 +578,7 @@ void setLoad(byte id) // procedure called when there is a set (write to Arduino)
     }
   case MODE_CV:
     {
-      //setMode(MODE_CV);
+      setMode(MODE_CV);
       unsigned int b0 = serialData[0];
       unsigned int b1 = serialData[1];
       setV((b0 << 8) | b1);
@@ -616,16 +656,17 @@ void sendMessage(byte command) // procedure called when there is a send (read fr
       break;
     }
   default:
-    {   
-      serialData[0] = current >> 8;  
-      serialData[1] = current & 0xFF; 
+    {
+      serialData[0] = current >> 8; // If this is MSB of Current then shouldn't it be left shifted?
+      serialData[1] = current & 0xFF; // Is there really any point in this bitwise AND operation?
       serialData[2] = voltage >> 8;
       serialData[3] = voltage & 0xFF;
       serialData[4] = temperature;
       serialData[5] = remoteStatus;
       serialData[6] = loadStatus;
-      Serial.write(serialData, 7);
-      printJSON();    
+      //Serial.write(serialData,7);
+      printJSON();
+      delay(1000);
       loadStatus = READY;
       break;
     }
@@ -702,17 +743,3 @@ void printJSON(){
   Serial.println("}");
 }
 
-void readSerialCmd(){
-  String cmd = Serial.readString();
-  
-  // Check for send commands 
-  if(cmd  == String("IDN")){
-    sendMessage(IDN);
-  }else if(cmd == String("QDC")){
-    sendMessage(QDC);
-  }else if(cmd == String("MR")){
-    sendMessage(0);
-  }else{
-    Serial.println("Invalid command");
-  }
-}
