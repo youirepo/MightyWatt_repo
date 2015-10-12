@@ -280,17 +280,16 @@ void serialMonitor()
 
     #define stricmp strcasecmp
     
-    
-    if(cmd[1] == '='){    // Check if set command
+    if(cmd[1] == '='){
       // Do set commands
-      sscanf(cmd, "%[^= ] = %d",cmd,&val);    // Parse the string
-      if(!stricmp(cmd,"I")){          
-        serialData[0] = val >> 8;             // Convert the input value to two bytes 
-        serialData[1] = val & 0xFF;
-        commandByte = 0b11000000;             // Set the commandByte to pass on to the appropriate functions
+      sscanf(cmd, "%[^= ] = %d",cmd,&val);
+      if(!stricmp(cmd,"I")){
+        // serialData[0] = val >> 8;
+        // serialData[1] = val & 0xFF;
+        commandByte = 0b11000000;
       }else if(!stricmp(cmd,"V")){
-        serialData[0] = val >> 8;
-        serialData[1] = val & 0xFF;
+        // serialData[0] = val >> 8;
+        // serialData[1] = val & 0xFF;
         commandByte = 0b11000001;
       }else if(!stricmp(cmd,"P")){
         // convert to three bytes
@@ -299,7 +298,7 @@ void serialMonitor()
         // convert to three bytes
         commandByte = 0b11100011;
       }
-    }else if(!stricmp(cmd,"QDC")){        // Check if send command
+    }else if(!stricmp(cmd,"QDC")){
       commandByte = 0b00011110;
     }else if(!stricmp(cmd,"IDN")){
       commandByte = 0b00011111;
@@ -316,8 +315,8 @@ void serialMonitor()
       if (commandByte & 0b10000000)
       {        
         // set command (write to Arduino)
-        setLoad(commandByte & 0b00011111);
-        //sendMessage(0);
+        setLoad(commandByte & 0b00011111, val);
+        sendMessage(0);
       }
       else
       {
@@ -564,42 +563,46 @@ void setMode(byte newMode)
   }
 }
 
-void setLoad(byte id) // procedure called when there is a set (write to Arduino) data command
+void setLoad(byte id, unsigned int val) // procedure called when there is a set (write to Arduino) data command
 {  
   switch (id)
   {
   case MODE_CC:
     {
-      setMode(MODE_CC);
-      unsigned int b0 = serialData[0];
-      unsigned int b1 = serialData[1];
-      setI((b0 << 8) | b1);
+      //setMode(MODE_CC);
+//      unsigned int b0 = serialData[0];
+//      unsigned int b1 = serialData[1];
+//      setI((b0 << 8) | b1);
+      setI(val);
       break;
     }
   case MODE_CV:
     {
-      setMode(MODE_CV);
-      unsigned int b0 = serialData[0];
-      unsigned int b1 = serialData[1];
-      setV((b0 << 8) | b1);
+      //setMode(MODE_CV);
+//      unsigned int b0 = serialData[0];
+//      unsigned int b1 = serialData[1];
+//      setV((b0 << 8) | b1);
+      setV(val);
       break;
     }
   case MODE_CP:
     {
       setMode(MODE_CP);
-      unsigned long b0 = serialData[0];
-      unsigned long b1 = serialData[1];
-      unsigned long b2 = serialData[2];
-      setPower = (b0 << 16) | (b1 << 8) | b2;
+//      unsigned long b0 = serialData[0];
+//      unsigned long b1 = serialData[1];
+//      unsigned long b2 = serialData[2];
+//      setPower = (b0 << 16) | (b1 << 8) | b2;
+        setPower = (long) val;
       break;
     }
   case MODE_CR:
     {
       setMode(MODE_CR);
-      unsigned long b0 = serialData[0];
-      unsigned long b1 = serialData[1];
-      unsigned long b2 = serialData[2];
-      setResistance = (b0 << 16) | (b1 << 8) | b2;      
+//      unsigned long b0 = serialData[0];
+//      unsigned long b1 = serialData[1];
+//      unsigned long b2 = serialData[2];
+//      setResistance = (b0 << 16) | (b1 << 8) | b2;     
+      setResistance = (long) val; 
       break;
     }         
   case REMOTE_ID:
