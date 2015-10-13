@@ -284,18 +284,12 @@ void serialMonitor()
       // Do set commands
       sscanf(cmd, "%[^= ] = %d",cmd,&val);
       if(!stricmp(cmd,"I")){
-        // serialData[0] = val >> 8;
-        // serialData[1] = val & 0xFF;
         commandByte = 0b11000000;
       }else if(!stricmp(cmd,"V")){
-        // serialData[0] = val >> 8;
-        // serialData[1] = val & 0xFF;
         commandByte = 0b11000001;
       }else if(!stricmp(cmd,"P")){
-        // convert to three bytes
         commandByte = 0b11100010;
       }else if(!stricmp(cmd,"R")){
-        // convert to three bytes
         commandByte = 0b11100011;
       }
     }else if(!stricmp(cmd,"QDC")){
@@ -607,7 +601,7 @@ void setLoad(byte id, unsigned int val) // procedure called when there is a set 
     }         
   case REMOTE_ID:
    {
-     setRemote(serialData[0]);
+     setRemote(val >> 8);
      break;
    }
   }
