@@ -731,12 +731,7 @@ unsigned int readADC12bit(int channel) // oversamples ADC to 12 bit (AVR) or ave
 
 void printJSON(){
   /* Print in JSON format */
-  Serial.print("{\"current\": ");
-  Serial.print(current, DEC);
-  Serial.print(", \"voltage\": ");
-  Serial.print(voltage, DEC);
-  Serial.print(", \"temperature\": ");
-  Serial.print(temperature, DEC);
-  Serial.println("}");
+  String json = "{\"current\": "+String(current)+", \"voltage\": "+String(voltage)+", \"temperature\": "+String(temperature)+"}";
+  Serial.println(json);
 }
 
